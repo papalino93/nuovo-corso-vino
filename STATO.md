@@ -130,6 +130,53 @@ corso il relatore può ora scrivere una lezione nuova sul posto, senza passare
 dal catalogo (resta comunque riusabile, e l'interfaccia lo dice). Test, lint e
 build sono verdi, ma nessuno l'ha ancora cliccata con un database vero.
 
+## In lavorazione sul branch corrente, non ancora in `main`
+
+Tre idee approvate ("spiegazione dopo la risposta", "link di verifica",
+"vista da proiettare in sala"), da affrontare una alla volta. Le prime due
+sono scritte e pushate su `claude/dove-eravamo-rimasti-si1q8h`:
+
+1. **Spiegazione dopo la risposta.** Ogni domanda può avere un testo
+   facoltativo (IT/EN) mostrato nella revisione del quiz, giusta o sbagliata
+   che sia la risposta. Tocca lo schema (`Question.explanationIt/explanationEn`,
+   migrazione `20260808080000_question_explanation`, verificata su Postgres
+   sandbox) — **serve la migrazione in produzione prima del merge**, stessa
+   disciplina di `certificate-branding-ready` qui sotto.
+2. **Link di verifica sull'attestato.** Ogni pergamena mostra un indirizzo
+   pubblico (`/verifica/{id-iscrizione}`) da cui chiunque la riceva può
+   controllare che sia autentica, senza accedere. **Nessuna migrazione**: il
+   codice è l'id dell'iscrizione stesso, già opaco e non enumerabile — questa
+   si può unire a `main` in qualunque momento.
+3. **Vista da proiettare in sala durante il quiz** — non ancora iniziata.
+
+## Rete di questo ambiente: risolta l'8 agosto
+
+L'ambiente cloud era configurato con policy di rete "Attendibili", che
+bloccava tutti i domini `*.vercel.app` (compresa la produzione stessa) e
+`blob.vercel-storage.com` — da qui non si poteva testare nulla in
+produzione. Cambiata a **"Completo"** dal pannello Environments di
+claude.ai/code (si apre cliccando la pillola con la nuvola vicino al
+campo messaggio, poi "Aggiorna ambiente cloud"). Il cambio si è applicato
+subito, anche alla sessione già aperta, non solo a quelle nuove come
+avvisa il modulo. Nota a parte: lo strumento `WebFetch` resta bloccato da
+un filtro diverso e indipendente da questa policy — per leggere una
+pagina web da qui bisogna scaricarla con `curl` e leggerne l'HTML a mano.
+
+## Sorso — da riprendere
+
+Sorso (<https://sorso-taccuino.vercel.app/>, dello stesso autore) è un
+taccuino di degustazione personale — metodo AIS, punteggio su 100 (visivo
+15, olfattivo 30, gusto-olfattivo 40, finale 15), login Google opzionale,
+modalità "Alla cieca" e modalità "Evento" (più persone degustano gli
+stessi vini, esce una classifica — pensata esplicitamente anche per "un
+corso"). Letto solo l'HTML pubblico da qui: **nessun collegamento tecnico
+reale** con nuovo-corso-vino oggi — non condivide sessione, non chiama
+API del corso. È un prodotto separato che si presta bene all'uso durante
+una serata, non un'integrazione. Il committente vuole discutere
+un'integrazione vera (login unico? link diretto da una lezione a un
+evento Sorso?) — **da riprendere**, è rimasta in sospeso per fine
+giornata.
+
 ## Pronto ma non ancora in produzione
 
 Sul ramo **`certificate-branding-ready`** (non `claude/dove-eravamo-rimasti-si1q8h`:
