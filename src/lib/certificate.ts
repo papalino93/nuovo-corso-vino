@@ -1,6 +1,7 @@
 import type { CertificateData } from "@/components/Certificate";
 import { courseOverview } from "./course";
 import type { EnrollmentRef } from "./enrollment";
+import { prisma } from "./prisma";
 import { TOTAL_COURSE_POINTS, meritSubtitle, meritTitle, percentage } from "./scoring";
 
 // Quando si ottiene l'attestato.
@@ -24,9 +25,21 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
+/**
+ * Testo mostrato in pergamena: chi la riceve — a mano, per email, su
+ * WhatsApp — deve poterlo leggere e digitare senza ambiguità, quindi niente
+ * schema (`https://`). Il codice è l'id stesso dell'iscrizione: non serve
+ * un campo dedicato, è già un identificatore opaco e non enumerabile.
+ */
+function buildVerifyUrl(origin: string, enrollmentId: string): string {
+  const host = origin.replace(/^https?:\/\//, "");
+  return `${host}/verifica/${enrollmentId}`;
+}
+
 export async function certificateFor(
   enrollment: EnrollmentRef,
   studentName: string,
+  origin: string,
 ): Promise<CertificateStatus | null> {
   const overview = await courseOverview(enrollment);
   if (!overview) return null;
@@ -51,12 +64,16 @@ export async function certificateFor(
       meritSubtitle: meritSubtitle(title),
       date: formatDate(new Date()),
       issuer: "L'Angolo del Vino",
+      verifyUrl: buildVerifyUrl(origin, enrollment.id),
     },
   };
 }
 
 /** Dati d'esempio per l'anteprima del relatore (§3.7a). */
-export function sampleCertificate(courseTitle: string): CertificateData {
+export function sampleCertificate(
+  courseTitle: string,
+  origin: string,
+): CertificateData {
   const title = meritTitle(96);
   return {
     name: "Nome Cognome",
@@ -65,5 +82,27 @@ export function sampleCertificate(courseTitle: string): CertificateData {
     meritSubtitle: meritSubtitle(title),
     date: formatDate(new Date()),
     issuer: "L'Angolo del Vino",
+    verifyUrl: buildVerifyUrl(origin, "anteprima"),
   };
+}
+
+/**
+ * L'attestato pubblico dietro un codice di verifica, senza bisogno di
+ * accedere: chiunque riceva una pergamena può controllare che sia autentica.
+ * Non rivela nulla che l'attestato stesso non mostri già — niente email,
+ * niente punteggio grezzo — e un'iscrizione non ancora conseguita risponde
+ * come un codice inesistente, per non confermare progressi altrui in corso.
+ */
+export async function verifyCertificate(
+  enrollmentId: string,
+  origin: string,
+): Promise<CertificateData | null> {
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: enrollmentId },
+    select: { id: true, courseId: true, user: { select: { name: true } } },
+  });
+  if (!enrollment) return null;
+
+  const status = await certificateFor(enrollment, enrollment.user.name, origin);
+  return status?.earned ? status.data : null;
 }

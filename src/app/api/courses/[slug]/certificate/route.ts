@@ -8,13 +8,14 @@ import { certificateFor } from "@/lib/certificate";
  * attestato con un punteggio o un titolo a piacere.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const ctx = await requireEnrollment((await params).slug);
   if (isDenied(ctx)) return ctx.response;
 
-  const status = await certificateFor(ctx.enrollment, ctx.user.name);
+  const origin = new URL(request.url).origin;
+  const status = await certificateFor(ctx.enrollment, ctx.user.name, origin);
   if (!status) {
     return NextResponse.json({ error: "corso inesistente" }, { status: 404 });
   }

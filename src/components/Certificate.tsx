@@ -40,6 +40,9 @@ export type CertificateData = {
   meritSubtitle: string;
   date: string;
   issuer: string;
+  /// Indirizzo pubblico da cui chiunque può verificare che questo attestato
+  /// sia autentico, senza bisogno di accedere. Vedi src/lib/certificate.ts.
+  verifyUrl: string;
 };
 
 /** Sigillo dentellato, lo stesso dell'app ma ridisegnato in coordinate SVG. */
@@ -349,6 +352,20 @@ export function Certificate({
         fontSize="14"
       >
         {data.date}
+      </text>
+
+      {/* Chiunque riceva la pergamena — a mano, per email, su WhatsApp —
+          può verificare che sia autentica, senza dover accedere al sito. */}
+      <text
+        x={cx}
+        y="601"
+        textAnchor="middle"
+        fill={INK}
+        fontFamily={SANS}
+        fontSize="10"
+        opacity="0.45"
+      >
+        Verifica: {data.verifyUrl}
       </text>
 
       <text
